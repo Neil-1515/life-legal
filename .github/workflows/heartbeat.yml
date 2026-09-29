@@ -1,0 +1,23 @@
+name: Supabase heartbeat
+
+# Life の中継サーバー（Supabase 無料プラン）は 7 日間アクセスが無いと自動停止する。
+# ユーザーのアプリ起動に頼らず、3 日ごとに heartbeat 表を 1 行読んで起こし続ける。
+# 読むだけ・ユーザーデータには触れない。SUPABASE_ANON_KEY はアプリに同梱されている公開キー。
+on:
+  schedule:
+    - cron: "17 3 */3 * *"   # 3日ごと 03:17 UTC（12:17 JST）
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Read heartbeat row
+        env:
+          KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          code=$(curl -s -o body.json -w '%{http_code}' \
+            -H "apikey: $KEY" -H "Authorization: Bearer $KEY" \
+            "https://sbndnwjmzsjnimmurboq.supabase.co/rest/v1/heartbeat?select=id&limit=1")
+          echo "HTTP $code"; cat body.json; echo
+          test "$code" = "200"
