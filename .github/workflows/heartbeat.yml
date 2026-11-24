@@ -11,7 +11,15 @@ on:
 jobs:
   ping:
     runs-on: ubuntu-latest
+    permissions:
+      actions: write
     steps:
+      # GitHub は公開リポに60日コミットが無いと定期実行を自動で止める（2026-11 に予告メール）。
+      # 実行のたびに自分自身を「有効」にし直して、その60日の数え直しをさせる。
+      - name: Keep this schedule enabled
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api -X PUT "repos/$GITHUB_REPOSITORY/actions/workflows/heartbeat.yml/enable"
       - name: Read heartbeat row
         env:
           KEY: ${{ secrets.SUPABASE_ANON_KEY }}
